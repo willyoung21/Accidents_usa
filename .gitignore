@@ -1,0 +1,10 @@
+# Entorno virtual
+.venv/
+
+# Archivos y directorios de Python
+__pycache__/
+
+# Datos crudos y procesados (para evitar subir datos grandes)
+DataSet/raw/
+DataSet/Processed/
+
