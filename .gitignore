@@ -1,5 +1,5 @@
 # Entorno virtual
-.venv/
+.venv
 
 # Archivos y directorios de Python
 __pycache__/
@@ -8,3 +8,4 @@ __pycache__/
 DataSet/raw/
 DataSet/Processed/
 
+db_conexion.py
