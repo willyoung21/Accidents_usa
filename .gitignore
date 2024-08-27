@@ -5,7 +5,9 @@
 __pycache__/
 
 # Datos crudos y procesados (para evitar subir datos grandes)
-DataSet/raw/
-DataSet/Processed/
+data
 
 db_conexion.py
+get-pip.py
+extract.py
+
