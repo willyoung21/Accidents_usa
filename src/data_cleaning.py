@@ -65,5 +65,7 @@ pd.set_option('display.max_columns', None)
 # Mostrar el DataFrame en formato tabular
 print(df_cleaned.head(100))
 
+datos_limpios = df_cleaned
+
 # Guardar los datos limpios en un archivo CSV
 df_cleaned.to_csv('data/us_accidents_cleaned.csv', index=False)
