@@ -5,9 +5,8 @@
 __pycache__/
 
 # Datos crudos y procesados (para evitar subir datos grandes)
-data
+
 
 db_conexion.py
 get-pip.py
-extract.py
 
