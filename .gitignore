@@ -6,8 +6,6 @@ __pycache__/
 
 # Datos crudos y procesados (para evitar subir datos grandes)
 data
-data/us_accidents_cleaned.csv
-data/us_accidents_raw.csv
 db_conexion.py
 get-pip.py
 extract.py
