@@ -8,6 +8,7 @@ __pycache__/
 data/us_accidents_cleaned.csv
 data/us_accidents_raw.csv
 data/API_data.csv
+data/API_data_Cleaned.csv
 db_conexion.py
 get-pip.py
 extract.py
