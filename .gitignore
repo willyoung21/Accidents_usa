@@ -13,4 +13,6 @@ data/API_data_Cleaned.csv
 db_conexion.py
 get-pip.py
 extract.py
+src/Credentials.py
+
 
