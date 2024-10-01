@@ -10,9 +10,7 @@ data/merged_data.csv
 data/us_accidents_raw.csv
 data/API_data.csv
 data/API_data_Cleaned.csv
-db_conexion.py
 get-pip.py
-extract.py
 src/Credentials.py
 src/client_secret.json
 
