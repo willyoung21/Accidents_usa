@@ -1,26 +1,33 @@
 import pandas as pd
-from sqlalchemy import create_engine
-import sys
+from db_conexion import establecer_conexion, cerrar_conexion
+from dotenv import load_dotenv
 import os
-from Credentials import usuario,password,host,puerto,db
 
-# Step 1: Read the CSV file
-csv_file = '../data/merged_data.csv'  # Replace with the path to your CSV file
-df = pd.read_csv(csv_file)
+def upload_to_postgres(csv_file, table_name):
+    # Cargar las variables de entorno desde el archivo .env
+    load_dotenv()
 
-# Step 2: Configure the PostgreSQL connection
-user = usuario  # Replace with your PostgreSQL user
-password = password  # Replace with your password
-host = host  # Replace if your database is on another server
-port = puerto  # Default PostgreSQL port
-db = db  # Replace with your database name
+    # Paso 1: Leer el archivo CSV
+    df = pd.read_csv(csv_file)
 
-# Create the connection string
-engine = create_engine(f'postgresql://{user}:{password}@{host}:{port}/{db}')
+    # Paso 2: Establecer la conexión a PostgreSQL usando el engine
+    engine, session = establecer_conexion()
 
-# Step 3: Upload the CSV data to a PostgreSQL table
-# You can specify the table name and whether to replace or append the data
-table_name = "merged"   # Replace with the name of your table
-df.to_sql(table_name, engine, if_exists='replace', index=False)
+    try:
+        # Paso 3: Subir los datos del CSV a una tabla de PostgreSQL
+        df.to_sql(table_name, engine, if_exists='replace', index=False)
+        print(f'Datos subidos a la tabla {table_name} exitosamente')
 
-print(f'Data uploaded to the table {table_name} successfully')
+    except Exception as e:
+        print(f'Error al subir los datos: {e}')
+
+    finally:
+        # Cerrar la conexión
+        cerrar_conexion(session)
+
+# Puedes llamar a la función `upload_to_postgres()` si deseas ejecutar el script directamente
+if __name__ == "__main__":
+    csv_file = 'data/merged_data_cleaned.csv'  # Reemplaza con la ruta correcta a tu archivo CSV
+    table_name = 'merged'  # Reemplaza con el nombre de tu tabla
+    upload_to_postgres(csv_file, table_name)
+

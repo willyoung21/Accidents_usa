@@ -8,7 +8,7 @@ def upload_to_drive(file_path, file_name):
     gauth = GoogleAuth()
 
     # Load the credentials file from a specific path
-    gauth.LoadClientConfigFile("../src/client_secret.json")  # Change the path here to your credentials file
+    gauth.LoadClientConfigFile("src/client_secret.json")  # Change the path here to your credentials file
 
     # Authenticate via the web browser
     gauth.LocalWebserverAuth()
@@ -28,6 +28,6 @@ def upload_to_drive(file_path, file_name):
     print(f"The file '{file_name}' has been successfully uploaded to Google Drive.")
 
 # Call the function with the path to your file
-csv_file_path = os.path.abspath(os.path.join('../data/merged_data.csv'))
+csv_file_path = os.path.abspath(os.path.join('data/merged_data_cleaned.csv'))
 upload_to_drive(csv_file_path, 'merged_data.csv')
 print("File uploaded successfully")
