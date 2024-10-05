@@ -1,6 +1,6 @@
-# Accident Analysis Project in the USA
+# US accident analysis project with a focus on New York
 
-This project aims to analyze traffic accident data in the United States. Through the extraction, cleaning, analysis and visualization of data, the aim is to identify patterns and trends that can be useful to improve road safety.
+This project aims to analyze traffic accident data in the United States, with a special focus on New York accidents obtained through an API. Through data extraction, cleaning, analysis and visualization, the aim is to identify patterns and trends that may be useful for improving road safety.
 
 ## Table of Contents
 
@@ -17,7 +17,7 @@ This project aims to analyze traffic accident data in the United States. Through
 
 ## Project Description
 
-The analysis of traffic accidents is crucial to understand the underlying causes and develop strategies to reduce their frequency and severity. This project uses a dataset of accidents in the United States, applying cleaning and transformation techniques to prepare the data for deeper analysis and informative visualizations.
+Traffic accident analysis is critical to understanding the underlying causes and developing strategies to reduce their frequency and severity. This project uses a US accident dataset and applies data cleansing and transformation techniques to prepare the data for further analysis and informative visualizations. Additionally, the project uses Apache Airflow to handle the extraction, transformation, and loading (ETL) tasks, allowing the creation of a merged dataset combining the US accident dataset and the New York accident dataset provided by the API.
 
 ### Goals
 
@@ -45,6 +45,7 @@ The project is organized in the following folders and files:
 
 - **src/**: Python scripts to automate tasks.
   - `data_cleaning.py`: Script for data cleaning.
+  - `API_cleaning.py`: Script for API cleaning.
   - `db_conexion.py`: Module to manage the connection to the database.
   - `extract.py`: Script for data extraction.
   - `visualization.py`: Tools for creating visualizations.
