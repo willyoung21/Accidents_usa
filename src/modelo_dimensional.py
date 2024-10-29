@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
 import os
@@ -41,59 +42,65 @@ dim_tiempo.to_sql('dim_tiempo', engine, if_exists='append', index=False)
 
 # Crear ID para dim_clima y filtrar las columnas
 dim_clima = merged_df[['temperature_f', 'wind_chill_f', 'humidity_percent', 'pressure_in', 
-                        'visibility_mi', 'wind_direction', 'wind_speed_mph', 'precipitation_in']].drop_duplicates()
+                        'visibility_mi', 'wind_direction', 'wind_speed_mph', 'precipitation_in']]
 dim_clima['dim_clima_id'] = range(1, len(dim_clima) + 1)
 
 # Insertar datos en la tabla dim_clima
 dim_clima.to_sql('dim_clima', engine, if_exists='append', index=False)
 
 # Crear ID para dim_vehiculo y filtrar las columnas
-dim_vehiculo = merged_df[['vehicle_type_code1', 'contributing_factor_vehicle_1']].drop_duplicates()
+dim_vehiculo = merged_df[['vehicle_type_code1', 'contributing_factor_vehicle_1']]
 dim_vehiculo['dim_vehiculo_id'] = range(1, len(dim_vehiculo) + 1)
 
 # Insertar datos en la tabla dim_vehiculo
 dim_vehiculo.to_sql('dim_vehiculo', engine, if_exists='append', index=False)
 
 # Crear ID para dim_ubicacion y filtrar las columnas
-dim_ubicacion = merged_df[['city', 'borough', 'location']].drop_duplicates()
+dim_ubicacion = merged_df[['city', 'borough', 'location']]
 dim_ubicacion['dim_ubicacion_id'] = range(1, len(dim_ubicacion) + 1)
 
 # Insertar datos en la tabla dim_ubicacion
 dim_ubicacion.to_sql('dim_ubicacion', engine, if_exists='append', index=False)
 
 # Mapea y asigna los IDs de las tablas de dimensiones a fact_accidentes
-fact_accidentes = merged_df[['crash_date', 'crash_time', 'number_of_persons_injured', 'number_of_persons_killed', 
+fact_accidents = merged_df[['crash_date', 'crash_time', 'number_of_persons_injured', 'number_of_persons_killed', 
                                 'number_of_pedestrians_injured', 'number_of_pedestrians_killed', 
                                 'number_of_cyclist_injured', 'number_of_cyclist_killed', 
                                 'number_of_motorist_injured', 'number_of_motorist_killed', 
                                 'severity', 'weather_condition']].copy()
 
 # Para dim_tiempo
-fact_accidentes = pd.merge(fact_accidentes, dim_tiempo[['dim_tiempo_id']], how='left', left_index=True, right_index=True)
+fact_accidents = pd.merge(fact_accidents, dim_tiempo[['dim_tiempo_id']], how='left', left_index=True, right_index=True)
 
 # Para dim_clima
-fact_accidentes = pd.merge(fact_accidentes, dim_clima[['dim_clima_id']], how='left', left_index=True, right_index=True)
+fact_accidents = pd.merge(fact_accidents, dim_clima[['dim_clima_id']], how='left', left_index=True, right_index=True)
 
 # Para dim_vehiculo
-fact_accidentes = pd.merge(fact_accidentes, dim_vehiculo[['dim_vehiculo_id']], how='left', left_index=True, right_index=True)
+fact_accidents = pd.merge(fact_accidents, dim_vehiculo[['dim_vehiculo_id']], how='left', left_index=True, right_index=True)
 
 # Para dim_ubicacion
-fact_accidentes = pd.merge(fact_accidentes, dim_ubicacion[['dim_ubicacion_id']], how='left', left_index=True, right_index=True)
+fact_accidents = pd.merge(fact_accidents, dim_ubicacion[['dim_ubicacion_id']], how='left', left_index=True, right_index=True)
 
-# Rellenar los valores nulos con ceros
-fact_accidentes[['dim_tiempo_id', 'dim_clima_id', 'dim_vehiculo_id', 'dim_ubicacion_id']] = fact_accidentes[['dim_tiempo_id', 'dim_clima_id', 'dim_vehiculo_id', 'dim_ubicacion_id']].fillna(0)
+# Rellenar los valores nulos con np.nan
+fact_accidents[['dim_tiempo_id', 'dim_clima_id', 'dim_vehiculo_id', 'dim_ubicacion_id']] = fact_accidents[['dim_tiempo_id', 'dim_clima_id', 'dim_vehiculo_id', 'dim_ubicacion_id']].fillna(np.nan)
 
-# Convertir los IDs a enteros
-fact_accidentes[['dim_tiempo_id', 'dim_clima_id', 'dim_vehiculo_id', 'dim_ubicacion_id']] = fact_accidentes[['dim_tiempo_id', 'dim_clima_id', 'dim_vehiculo_id', 'dim_ubicacion_id']].astype(int)
+# Convertir los IDs a enteros, asegurando que los valores nulos permanezcan como np.nan
+fact_accidents[['dim_tiempo_id', 'dim_clima_id', 'dim_vehiculo_id', 'dim_ubicacion_id']] = fact_accidents[['dim_tiempo_id', 'dim_clima_id', 'dim_vehiculo_id', 'dim_ubicacion_id']].astype('Int64')
 
-# Filtrar filas donde dim_vehiculo_id es cero antes de la inserción
-fact_accidentes = fact_accidentes[fact_accidentes['dim_vehiculo_id'] != 0]
+# Filtrar filas donde dim_vehiculo_id es np.nan antes de la inserción
+fact_accidents = fact_accidents[fact_accidents['dim_vehiculo_id'].notna()]
 
-# Verificar si existen IDs en la tabla dim_vehiculo
-existing_vehiculo_ids = dim_vehiculo['dim_vehiculo_id'].unique()
-fact_accidentes = fact_accidentes[fact_accidentes['dim_vehiculo_id'].isin(existing_vehiculo_ids)]
+# Verificar si existen IDs en la tabla dim_clima
+valid_clima_ids = dim_clima['dim_clima_id'].unique()
+fact_accidents = fact_accidents[fact_accidents['dim_clima_id'].isin(valid_clima_ids)]
 
-# Insertar en la base de datos
-fact_accidentes.to_sql('fact_accidentes', engine, if_exists='append', index=False)
+# También filtra por los demás IDs, asegurando que no sean np.nan
+valid_tiempo_ids = dim_tiempo['dim_tiempo_id'].unique()
+fact_accidents = fact_accidents[fact_accidents['dim_tiempo_id'].isin(valid_tiempo_ids)]
 
-print("Datos insertados exitosamente en las tablas.")
+valid_ubicacion_ids = dim_ubicacion['dim_ubicacion_id'].unique()
+fact_accidents = fact_accidents[fact_accidents['dim_ubicacion_id'].isin(valid_ubicacion_ids)]
+
+# Insertar datos en la tabla fact_accidents
+fact_accidents.to_sql('fact_accidents', engine, if_exists='append', index=False)
+print("Datos insertados exitosamente en las tablas.")
