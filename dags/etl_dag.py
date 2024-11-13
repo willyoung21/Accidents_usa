@@ -13,11 +13,10 @@ from API_connection import get_data_from_api
 from API_cleaning import clean_api_data
 from extract import extract_data
 from data_cleaning import clean_data
-from upload_to_postgres import upload_to_postgres
-from upload_to_drive import upload_to_drive
 from merge_data import merge_data
-from kafka import KafkaProducer
-
+from load_dimensional_model import dimensional_model
+from kafka_producer import kafka_producer
+from kafka_consumer import kafka_consumer_to_google_sheets
 
 # Definir el DAG
 default_args = {
@@ -69,18 +68,24 @@ with DAG(
         dag=dag,
     )
 
-    upload_to_postgres_task = PythonOperator(
-        task_id='upload_to_postgres',
-        python_callable=upload_to_postgres,
+    load_dimensional_model_task = PythonOperator(
+        task_id='load_dimensional_model',
+        python_callable=dimensional_model,
         dag=dag,
     )
 
-    upload_to_drive_task = PythonOperator(
-        task_id='upload_to_drive',
-        python_callable=upload_to_drive,
+    kafka_producer_task = PythonOperator(
+        task_id='kafka_producer',
+        python_callable=kafka_producer,
+        dag=dag,
+    )
+
+    kafka_consumer_task = PythonOperator(
+        task_id='kafka_consumer_to_google_sheets',
+        python_callable=kafka_consumer_to_google_sheets,
         dag=dag,
     )
 
     # Definir la secuencia de tareas
     get_data_task >> clean_api_data_task >> merge_data_task
-    extract_csv_task >> clean_data_task >> merge_data_task >> upload_to_postgres_task >> upload_to_drive_task
+    extract_csv_task >> clean_data_task >> merge_data_task >> load_dimensional_model_task >> kafka_producer_task >> kafka_consumer_task
