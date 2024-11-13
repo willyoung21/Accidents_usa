@@ -16,6 +16,8 @@ from data_cleaning import clean_data
 from upload_to_postgres import upload_to_postgres
 from upload_to_drive import upload_to_drive
 from merge_data import merge_data
+from kafka import KafkaProducer
+
 
 # Definir el DAG
 default_args = {
