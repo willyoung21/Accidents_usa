@@ -19,3 +19,4 @@ src/Credentials.py
 src/client_secret.json
 accidents_usa.json
 puglins
+venv/
