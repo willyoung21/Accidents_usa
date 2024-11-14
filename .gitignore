@@ -17,5 +17,6 @@ data/merged_data_cleaned.csv
 get-pip.py
 src/Credentials.py
 src/client_secret.json
-
-
+accidents_usa.json
+puglins
+venv/
