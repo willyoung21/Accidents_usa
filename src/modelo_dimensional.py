@@ -103,4 +103,4 @@ fact_accidents = fact_accidents[fact_accidents['dim_ubicacion_id'].isin(valid_ub
 
 # Insertar datos en la tabla fact_accidents
 fact_accidents.to_sql('fact_accidents', engine, if_exists='append', index=False)
-print("Datos insertados exitosamente en las tablas.")
+print("Datos insertados exitosamente en las tablas.")
