@@ -21,7 +21,6 @@ def establecer_conexion():
     # Crear una sesión (opcional, si necesitas trabajar con ORM más adelante)
     Session = sessionmaker(bind=engine)
     session = Session()
-
     print("Conexión exitosa a la base de datos")
     return engine, session  # Devolver tanto el engine como la session si es necesario
 
