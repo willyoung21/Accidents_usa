@@ -1,80 +1,107 @@
-import sqlite3
 import pandas as pd
 
-# Conexión a la base de datos SQLite (o cambiar para tu base de datos)
-conn = sqlite3.connect('ETL_Proyecto1')
-cursor = conn.cursor()
+def merge_data():
+    # Load the CSV files
+    API_merge = pd.read_csv('data/API_data_Cleaned.csv')
+    db_merge = pd.read_csv('data/us_accidents_cleaned.csv')
 
-# Leer el archivo CSV
-df = pd.read_csv('/mnt/data/merged_data_cleaned.csv')
+    # Convert date columns to datetime format and use only the date
+    API_merge['crash_date'] = pd.to_datetime(API_merge['crash_date']).dt.date  # Use only the date
+    db_merge['start_time'] = pd.to_datetime(db_merge['start_time']).dt.date  # Use only the date
 
-# Función para insertar en dim_date
-def insert_dim_date(df, cursor):
-    # Convertir crash_date a formato de fecha y extraer año, mes y día
-    df['year'] = pd.to_datetime(df['crash_date']).dt.year
-    df['month'] = pd.to_datetime(df['crash_date']).dt.month
-    df['day'] = pd.to_datetime(df['crash_date']).dt.day
-    
-    # Crear DataFrame con los campos correctos para dim_date
-    date_df = df[['year', 'month', 'day']].drop_duplicates().reset_index(drop=True)
-    
-    # Añadir una columna ID (clave primaria para la tabla dim_date)
-    date_df['id'] = date_df.index + 1
-    
-    # Insertar solo los campos year, month, day (no crash_date)
-    date_df[['id', 'year', 'month', 'day']].to_sql('dim_date', conn, if_exists='append', index=False)
-    
-    # Llamada a la función para insertar los datos
-insert_dim_date(df, cursor)
+    # Filter both datasets for rows where the city is 'New York'
+    api_data_ny = API_merge[API_merge['city'] == 'New York']
+    us_accidents_ny = db_merge[db_merge['city'] == 'New York']
 
-# Función para insertar en dim_location
-def insert_dim_location(df, cursor):
-    location_df = df[['city', 'borough']].drop_duplicates().reset_index(drop=True)
-    location_df['id'] = location_df.index + 1
-    location_df.to_sql('dim_location', conn, if_exists='append', index=False)
+    # Merge the two datasets based on the date (inner join)
+    merged_df = pd.merge(api_data_ny, us_accidents_ny, left_on='crash_date', right_on='start_time', how='inner')
 
-# Función para insertar en dim_time
-def insert_dim_time(df, cursor):
-    df['hour'] = pd.to_datetime(df['crash_time'], format='%H:%M').dt.hour
-    df['minute'] = pd.to_datetime(df['crash_time'], format='%H:%M').dt.minute
-    time_df = df[['hour', 'minute']].drop_duplicates().reset_index(drop=True)
-    time_df['id'] = time_df.index + 1
-    time_df.to_sql('dim_time', conn, if_exists='append', index=False)
+    # Drop duplicate city columns ('city_x' and 'city_y')
+    merged_df = merged_df.drop(columns=['city_x', 'city_y'])
 
-# Función para insertar en dim_weather
-def insert_dim_weather(df, cursor):
-    weather_df = df[['weather_condition']].drop_duplicates().reset_index(drop=True)
-    weather_df['id'] = weather_df.index + 1
-    weather_df.to_sql('dim_weather', conn, if_exists='append', index=False)
+    # 1. Ensure that the date column is in datetime format
+    merged_df['crash_date'] = pd.to_datetime(merged_df['crash_date'], errors='coerce')
 
-# Función para insertar en dim_vehicle
-def insert_dim_vehicle(df, cursor):
-    vehicle_df = df[['vehicle_type_code1']].drop_duplicates().reset_index(drop=True)
-    vehicle_df['id'] = vehicle_df.index + 1
-    vehicle_df.to_sql('dim_vehicle', conn, if_exists='append', index=False)
+    # 2. Create a new column that contains the month and year
+    # Here it's formatted as "YYYY-MM"
+    merged_df['crash_date'] = merged_df['crash_date'].dt.to_period('M')
 
-# Función para insertar en fact_accident
-def insert_fact_accident(df, cursor):
-    fact_df = df[['number_of_persons_injured']].copy()
-    fact_df['id'] = df.index + 1
-    # Aquí deberías buscar los ids de las dimensiones correspondientes
-    fact_df['date_id'] = fact_df.index + 1  # Esto debe reemplazarse con las claves correctas
-    fact_df['location_id'] = fact_df.index + 1
-    fact_df['time_id'] = fact_df.index + 1
-    fact_df['weather_id'] = fact_df.index + 1
-    fact_df['vehicle_id'] = fact_df.index + 1
-    fact_df.to_sql('fact_accident', conn, if_exists='append', index=False)
+    # Add a new column 'city' with the value "New York"
+    merged_df['city'] = "New York"
 
-# Insertar los datos en las tablas de dimensiones
-insert_dim_date(df, cursor)
-insert_dim_location(df, cursor)
-insert_dim_time(df, cursor)
-insert_dim_weather(df, cursor)
-insert_dim_vehicle(df, cursor)
+    merged_df = merged_df.sort_values(by='crash_date', ascending=True)
 
-# Insertar los datos en la tabla de hechos
-insert_fact_accident(df, cursor)
+    # Move the 'city' column to the beginning of the DataFrame
+    cols = ['city'] + [col for col in merged_df.columns if col != 'city']
+    merged_df = merged_df[cols]
 
-# Confirmar y cerrar la conexión
-conn.commit()
-conn.close()
+    # Convert the 'crash_time' column to datetime if it's not already
+    merged_df['crash_time'] = pd.to_datetime(merged_df['crash_time'], errors='coerce')
+
+    # Extract only the hour
+    merged_df['crash_time'] = merged_df['crash_time'].dt.strftime('%H:%M')
+
+    # Convert 'number_of_persons_injured' to integer
+    merged_df['number_of_persons_injured'] = pd.to_numeric(merged_df['number_of_persons_injured'], errors='coerce').fillna(0).astype(int)
+
+    # 3. Drop 'collision_id'
+    merged_df.drop(columns=['collision_id'], inplace=True)
+
+    # 4. Drop 'contributing_factor_vehicle_2'
+    merged_df.drop(columns=['contributing_factor_vehicle_2'], inplace=True)
+
+    # 5. Drop 'vehicle_type_code2'
+    merged_df.drop(columns=['vehicle_type_code2'], inplace=True)
+
+    # 6. Combine 'borough' with 'zip_code'
+    # Assuming 'borough' and 'zip_code' are the columns in merged_clean
+    merged_df['borough'] = merged_df['borough'] + ' - ' + merged_df['zip_code'].astype(str)
+
+    # 7. Drop latitude and longitude
+    merged_df.drop(columns=['latitude', 'longitude'], inplace=True)
+
+    # 8. Drop 'start time' and 'end time'
+    merged_df.drop(columns=['start_time', 'end_time'], inplace=True)
+
+    # 9. Drop 'start latitude' and 'end latitude'
+    merged_df.drop(columns=['start_lat', 'start_lng'], inplace=True)
+
+    # 10. Drop 'distance in miles'
+    merged_df.drop(columns=['distance_mi'], inplace=True)
+
+    # 11. Drop 'county'
+    merged_df.drop(columns=['county'], inplace=True)
+
+    # 12. Combine 'state' with 'city'
+    merged_df['city'] = merged_df['city'] + ', ' + merged_df['state']
+
+    # 13. Drop 'zipcode'
+    merged_df.drop(columns=['zipcode'], inplace=True)
+
+    # 14. Drop unnecessary columns
+    columns_to_drop = [
+        'airport_code', 'amenity', 'bump', 'crossing', 'give_way', 'junction', 
+        'no_exit', 'railway', 'roundabout', 'station', 'stop', 'traffic_calming', 
+        'traffic_signal', 'turning_loop'
+    ]
+    merged_df.drop(columns=columns_to_drop, inplace=True, errors='ignore')
+
+    # 15. Drop additional columns
+    merged_df.drop(columns=['zip_code', 'state', 'weather_timestamp'], inplace=True)
+
+    # Assign an ID to each row
+    merged_df['id'] = range(1, len(merged_df) + 1)
+
+    # Move the 'id' column to the beginning
+    cols = ['id'] + [col for col in merged_df.columns if col != 'id']
+    merged_df = merged_df[cols]
+
+    # Check the number of rows after the merge
+    merged_count = merged_df.shape[0]
+    print(f"Number of rows after the merge: {merged_count}")
+
+    # Check for null values in the merged DataFrame
+    print(f"Null values: \n{merged_df.isnull().sum()}\n")
+
+    # Save the merged result to a CSV file
+    merged_df.to_csv('../data/merged_data.csv', index=False, encoding='utf-8')

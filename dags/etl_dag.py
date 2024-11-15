@@ -1,28 +1,28 @@
 import sys
 import os
 
-# Agregar la ruta al paquete src
+# Add the path to the src package
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 
-# Importar funciones desde los módulos en src
-from API_connection import get_data_from_api
-from API_cleaning import clean_api_data
-from extract import extract_data
-from data_cleaning import clean_data
-from merge_data import merge_data
-from load_dimensional_model import dimensional_model
-from kafka_producer import kafka_producer
-from kafka_consumer import kafka_consumer_to_google_sheets
+# Import functions from the modules in src
+from src.API_connection import get_data_from_api
+from src.API_cleaning import clean_api_data
+from src.extract import extract_data
+from src.data_cleaning import clean_data
+from src.merge_data import merge_data
+from src.load_dimensional_model import dimensional_model
+from src.kafka_producer import kafka_producer
 
-# Definir el DAG
+
+# Define the DAG
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2024, 12, 1),
+    'start_date': datetime(2024, 11, 13),
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
@@ -36,7 +36,7 @@ with DAG(
     schedule_interval='@daily',
 ) as dag:
 
-    # Definir las tareas
+    # Define the tasks
     
     get_data_task = PythonOperator(
         task_id='get_data_from_api',
@@ -80,12 +80,7 @@ with DAG(
         dag=dag,
     )
 
-    kafka_consumer_task = PythonOperator(
-        task_id='kafka_consumer_to_google_sheets',
-        python_callable=kafka_consumer_to_google_sheets,
-        dag=dag,
-    )
 
-    # Definir la secuencia de tareas
+    # Define the task sequence
     get_data_task >> clean_api_data_task >> merge_data_task
-    extract_csv_task >> clean_data_task >> merge_data_task >> load_dimensional_model_task >> kafka_producer_task >> kafka_consumer_task
+    extract_csv_task >> clean_data_task >> merge_data_task >> load_dimensional_model_task >> kafka_producer_task

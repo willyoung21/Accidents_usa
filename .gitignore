@@ -8,6 +8,7 @@ __pycache__/
 .env
 
 # Datos crudos y procesados (para evitar subir datos grandes)
+data/
 data/us_accidents_cleaned.csv
 data/merged_data.csv
 data/us_accidents_raw.csv
@@ -17,6 +18,8 @@ data/merged_data_cleaned.csv
 get-pip.py
 src/Credentials.py
 src/client_secret.json
+credentials.json
 accidents_usa.json
-puglins
+puglins/
 venv/
+ETL_Proyecto1

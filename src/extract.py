@@ -1,27 +1,28 @@
 import pandas as pd
-from db_conexion import establecer_conexion, cerrar_conexion
+from db_conexion import establish_connection, close_connection
 
 def extract_data():
-    # Establece la conexión usando SQLAlchemy
-    engine, session = establecer_conexion()  # Ahora engine es el primero que se recibe
+    # Establish connection using SQLAlchemy
+    engine, session = establish_connection()  # Now engine is the first one returned
 
-    # Consulta SQL para extraer datos
+    # SQL query to extract data
     query = "SELECT * FROM us_accidents"
 
-    # Carga los datos en un DataFrame de pandas usando el engine de SQLAlchemy
+    # Load the data into a pandas DataFrame using SQLAlchemy engine
     df = pd.read_sql(query, con=engine)
 
-    # Cierra la sesión y la conexión
-    cerrar_conexion(session)
-    print("Datos cargados con éxito")
+    # Close the session and connection
+    close_connection(session)
+    print("Data loaded successfully")
 
-    # Guarda los datos en un archivo CSV para la transformación
+    # Save the data to a CSV file for transformation
     df.to_csv('data/us_accidents_raw.csv', index=False)
-    print("Datos guardados en 'data/us_accidents_raw.csv'")
+    print("Data saved to 'data/us_accidents_raw.csv'")
 
-# Puedes llamar a la función `extract_data()` si deseas ejecutar el script directamente
+# You can call the `extract_data()` function if you want to run the script directly
 if __name__ == "__main__":
     extract_data()
+
 
 
 

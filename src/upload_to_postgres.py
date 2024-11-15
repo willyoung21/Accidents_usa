@@ -1,33 +1,34 @@
 import pandas as pd
-from db_conexion import establecer_conexion, cerrar_conexion
+from db_conexion import establish_connection, close_connection
 from dotenv import load_dotenv
 import os
 
 def upload_to_postgres(csv_file, table_name):
-    # Cargar las variables de entorno desde el archivo .env
+    # Load environment variables from the .env file
     load_dotenv()
 
-    # Paso 1: Leer el archivo CSV
+    # Step 1: Read the CSV file
     df = pd.read_csv(csv_file)
 
-    # Paso 2: Establecer la conexión a PostgreSQL usando el engine
-    engine, session = establecer_conexion()
+    # Step 2: Establish the connection to PostgreSQL using the engine
+    engine, session = establish_connection()
 
     try:
-        # Paso 3: Subir los datos del CSV a una tabla de PostgreSQL
+        # Step 3: Upload the CSV data to a PostgreSQL table
         df.to_sql(table_name, engine, if_exists='replace', index=False)
-        print(f'Datos subidos a la tabla {table_name} exitosamente')
+        print(f'Data successfully uploaded to the {table_name} table')
 
     except Exception as e:
-        print(f'Error al subir los datos: {e}')
+        print(f'Error uploading data: {e}')
 
     finally:
-        # Cerrar la conexión
-        cerrar_conexion(session)
+        # Close the connection
+        close_connection(session)
 
-# Puedes llamar a la función `upload_to_postgres()` si deseas ejecutar el script directamente
+# You can call the `upload_to_postgres()` function if you want to run the script directly
 if __name__ == "__main__":
-    csv_file = 'data/merged_data_cleaned.csv'  # Reemplaza con la ruta correcta a tu archivo CSV
-    table_name = 'merged'  # Reemplaza con el nombre de tu tabla
+    csv_file = 'data/merged_data_cleaned.csv'  # Replace with the correct path to your CSV file
+    table_name = 'merged'  # Replace with the name of your table
     upload_to_postgres(csv_file, table_name)
+
 

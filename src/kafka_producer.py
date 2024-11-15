@@ -3,27 +3,27 @@ from sqlalchemy import create_engine
 from dotenv import load_dotenv
 import os
 import json
-import time  # Importa el módulo time para usar sleep
-from kafka import KafkaProducer  # Importación del KafkaProducer
+import time  # Import the time module to use sleep
+from kafka import KafkaProducer  
 
 def kafka_producer():
-    # Cargar las variables de entorno del archivo .env
+    # Load environment variables from the .env file
     load_dotenv()
 
-    # Obtener las variables de entorno
+    # Get environment variables
     DB_HOST = os.getenv('DB_HOST')
     DB_PORT = os.getenv('DB_PORT')
     DB_USER = os.getenv('DB_USER')
     DB_PASS = os.getenv('DB_PASS')
     DB_NAME = os.getenv('DB_NAME')
 
-    # Configurar la conexión a la base de datos
+    # Configure the database connection
     DATABASE_URL = f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
     engine = create_engine(DATABASE_URL)
 
-    # Conexión a PostgreSQL para obtener el número total de personas heridas
+    # PostgreSQL connection to get the total number of injured people
     try:
-        # Consulta SQL para obtener el total de personas heridas por día
+        # SQL query to get the total number of injured people by day
         query = """
         SELECT 
             crash_date AS date, 
@@ -39,39 +39,39 @@ def kafka_producer():
             crash_date;
         """
         
-        # Ejecutar la consulta usando pandas para obtener el resultado en un DataFrame
+        # Execute the query using pandas to get the result in a DataFrame
         df = pd.read_sql(query, engine)
         
-        # Verificar si el DataFrame contiene datos
+        # Check if the DataFrame contains data
         if df.empty:
-            print("No se encontraron datos en la consulta.")
+            print("No data found in the query.")
             return
 
-        # Configurar el productor de Kafka
+        # Configure the Kafka producer
         producer = KafkaProducer(
             bootstrap_servers='localhost:9092',
             value_serializer=lambda v: json.dumps(v).encode('utf-8')
         )
 
-        # Enviar cada fila de datos al tema de Kafka
+        # Send each row of data to the Kafka topic
         for index, row in df.iterrows():
-            # Crear el mensaje con la fecha y el total de personas heridas
+            # Create the message with the date and total injured
             message = {
-                "date": row['date'],  # La fecha del accidente
-                "total_injured": row['total_injured']  # Total de personas heridas
+                "date": row['date'],  # The accident date
+                "total_injured": row['total_injured']  # Total number of injured people
             }
-            # Enviar el mensaje a Kafka en el tema 'injuries_by_day'
+            # Send the message to Kafka in the 'injuries_by_day' topic
             producer.send('injuries_by_day', value=message)
-            print(f"Enviado a Kafka: {message}")
+            print(f"Sent to Kafka: {message}")
             
-            # Pausar 3 segundos antes de enviar el siguiente mensaje
+            # Pause for 3 seconds before sending the next message
             time.sleep(3)
 
-        # Asegurarse de que todos los mensajes se envíen antes de cerrar el productor
+        # Ensure all messages are sent before closing the producer
         producer.flush()
 
     except Exception as e:
-        print(f"Error al conectar a la base de datos o enviar datos a Kafka: {e}")
+        print(f"Error connecting to the database or sending data to Kafka: {e}")
 
 if __name__ == "__main__":
     kafka_producer()

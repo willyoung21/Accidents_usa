@@ -3,32 +3,32 @@ from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 import os
 
-# Cargar las variables de entorno desde el archivo .env
+# Load environment variables from the .env file
 load_dotenv()
 
-# Obtener las credenciales desde las variables de entorno
+# Get the credentials from environment variables
 db = os.getenv('DB_NAME')
-usuario = os.getenv('DB_USER')
-token = os.getenv('DB_PASS')
-host1 = os.getenv('DB_HOST')
-puerto = os.getenv('DB_PORT')
+user = os.getenv('DB_USER')
+password = os.getenv('DB_PASS')
+host = os.getenv('DB_HOST')
+port = os.getenv('DB_PORT')
 
-def establecer_conexion():
-    # Crear la cadena de conexión para SQLAlchemy
-    connection_string = f'postgresql+psycopg2://{usuario}:{token}@{host1}:{puerto}/{db}'
+def establish_connection():
+    # Create the connection string for SQLAlchemy
+    connection_string = f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}'
     engine = create_engine(connection_string)
     
-    # Crear una sesión (opcional, si necesitas trabajar con ORM más adelante)
+    # Create a session (optional, if you need to work with ORM later)
     Session = sessionmaker(bind=engine)
     session = Session()
-    print("Conexión exitosa a la base de datos")
-    return engine, session  # Devolver tanto el engine como la session si es necesario
+    print("Successful database connection")
+    return engine, session  # Return both engine and session if needed
 
-def cerrar_conexion(session):
+def close_connection(session):
     session.close()
-    print("Conexión cerrada a la base de datos")
+    print("Database connection closed")
 
-# Establecer la conexión
-engine, session = establecer_conexion()
+# Establish the connection
+engine, session = establish_connection()
 
-# Ahora puedes usar `engine` con pandas sin problemas
+# Now you can use `engine` with pandas without any issues

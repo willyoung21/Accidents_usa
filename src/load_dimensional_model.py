@@ -6,104 +6,103 @@ import os
 
 def dimensional_model():
 
-
-    # Cargar las variables de entorno del archivo .env
+    # Load environment variables from the .env file
     load_dotenv()
 
-    # Obtener las variables de entorno
+    # Get the environment variables
     DB_HOST = os.getenv('DB_HOST')
     DB_PORT = os.getenv('DB_PORT')
     DB_USER = os.getenv('DB_USER')
     DB_PASS = os.getenv('DB_PASS')
     DB_NAME = os.getenv('DB_NAME')
 
-    # Configurar la conexión a la base de datos
+    # Configure the database connection
     DATABASE_URL = f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
     engine = create_engine(DATABASE_URL)
 
-    # Cargar el archivo CSV de accidentes
-    merged_df = pd.read_csv('data/merged_data_cleaned.csv')
+    # Load the CSV file of accidents
+    merged_df = pd.read_csv('data/merged_data_cleaned.csv', encoding='utf-8')
 
-    # Convertir crash_date y crash_time a datetime
+    # Convert crash_date and crash_time to datetime
     merged_df['crash_datetime'] = pd.to_datetime(merged_df['crash_date'] + ' ' + merged_df['crash_time'], errors='coerce')
 
-    # Verificar si hay errores de conversión de fecha
+    # Check for date conversion errors
     if merged_df['crash_datetime'].isnull().any():
-        print("Advertencia: Algunas fechas no se pudieron convertir.")
+        print("Warning: Some dates could not be converted.")
 
-    # Extraer información de tiempo
-    merged_df['dim_tiempo_id'] = range(1, len(merged_df) + 1)
-    merged_df['fecha'] = merged_df['crash_datetime'].dt.strftime('%Y-%m')  # Convertir a formato de cadena 'YYYY-MM'
-    merged_df['hora'] = merged_df['crash_datetime'].dt.strftime('%H:%M')  # Formato HH:MM
-    merged_df['dia'] = merged_df['crash_datetime'].dt.day_name()
-    merged_df['mes'] = merged_df['crash_datetime'].dt.month_name()
-    merged_df['año'] = merged_df['crash_datetime'].dt.year
+    # Extract time information
+    merged_df['dim_time_id'] = range(1, len(merged_df) + 1)
+    merged_df['date'] = merged_df['crash_datetime'].dt.strftime('%Y-%m')  # Convert to 'YYYY-MM' format
+    merged_df['hour'] = merged_df['crash_datetime'].dt.strftime('%H:%M')  # HH:MM format
+    merged_df['day'] = merged_df['crash_datetime'].dt.day_name()
+    merged_df['month'] = merged_df['crash_datetime'].dt.month_name()
+    merged_df['year'] = merged_df['crash_datetime'].dt.year
 
-    # Insertar datos en la tabla dim_tiempo
-    dim_tiempo = merged_df[['dim_tiempo_id', 'fecha', 'dia', 'mes', 'año', 'hora']].drop_duplicates()
-    dim_tiempo.to_sql('dim_tiempo', engine, if_exists='append', index=False)
+    # Insert data into the dim_time table
+    dim_time = merged_df[['dim_time_id', 'date', 'day', 'month', 'year', 'hour']].drop_duplicates()
+    dim_time.to_sql('dim_time', engine, if_exists='append', index=False)
 
-    # Crear ID para dim_clima y filtrar las columnas
-    dim_clima = merged_df[['temperature_f', 'wind_chill_f', 'humidity_percent', 'pressure_in', 
+    # Create ID for dim_weather and filter the columns
+    dim_weather = merged_df[['temperature_f', 'wind_chill_f', 'humidity_percent', 'pressure_in', 
                             'visibility_mi', 'wind_direction', 'wind_speed_mph', 'precipitation_in']]
-    dim_clima['dim_clima_id'] = range(1, len(dim_clima) + 1)
+    dim_weather['dim_weather_id'] = range(1, len(dim_weather) + 1)
 
-    # Insertar datos en la tabla dim_clima
-    dim_clima.to_sql('dim_clima', engine, if_exists='append', index=False)
+    # Insert data into the dim_weather table
+    dim_weather.to_sql('dim_weather', engine, if_exists='append', index=False)
 
-    # Crear ID para dim_vehiculo y filtrar las columnas
-    dim_vehiculo = merged_df[['vehicle_type_code1', 'contributing_factor_vehicle_1']]
-    dim_vehiculo['dim_vehiculo_id'] = range(1, len(dim_vehiculo) + 1)
+    # Create ID for dim_vehicle and filter the columns
+    dim_vehicle = merged_df[['vehicle_type_code1', 'contributing_factor_vehicle_1']]
+    dim_vehicle['dim_vehicle_id'] = range(1, len(dim_vehicle) + 1)
 
-    # Insertar datos en la tabla dim_vehiculo
-    dim_vehiculo.to_sql('dim_vehiculo', engine, if_exists='append', index=False)
+    # Insert data into the dim_vehicle table
+    dim_vehicle.to_sql('dim_vehicle', engine, if_exists='append', index=False)
 
-    # Crear ID para dim_ubicacion y filtrar las columnas
-    dim_ubicacion = merged_df[['city', 'borough', 'location']]
-    dim_ubicacion['dim_ubicacion_id'] = range(1, len(dim_ubicacion) + 1)
+    # Create ID for dim_location and filter the columns
+    dim_location = merged_df[['city', 'borough', 'location']]
+    dim_location['dim_location_id'] = range(1, len(dim_location) + 1)
 
-    # Insertar datos en la tabla dim_ubicacion
-    dim_ubicacion.to_sql('dim_ubicacion', engine, if_exists='append', index=False)
+    # Insert data into the dim_location table
+    dim_location.to_sql('dim_location', engine, if_exists='append', index=False)
 
-    # Mapea y asigna los IDs de las tablas de dimensiones a fact_accidentes
+    # Map and assign dimension table IDs to fact_accidents
     fact_accidents = merged_df[['crash_date', 'crash_time', 'number_of_persons_injured', 'number_of_persons_killed', 
-                                    'number_of_pedestrians_injured', 'number_of_pedestrians_killed', 
-                                    'number_of_cyclist_injured', 'number_of_cyclist_killed', 
-                                    'number_of_motorist_injured', 'number_of_motorist_killed', 
-                                    'severity', 'weather_condition']].copy()
+                                'number_of_pedestrians_injured', 'number_of_pedestrians_killed', 
+                                'number_of_cyclist_injured', 'number_of_cyclist_killed', 
+                                'number_of_motorist_injured', 'number_of_motorist_killed', 
+                                'severity', 'weather_condition']].copy()
 
-    # Para dim_tiempo
-    fact_accidents = pd.merge(fact_accidents, dim_tiempo[['dim_tiempo_id']], how='left', left_index=True, right_index=True)
+    # For dim_time
+    fact_accidents = pd.merge(fact_accidents, dim_time[['dim_time_id']], how='left', left_index=True, right_index=True)
 
-    # Para dim_clima
-    fact_accidents = pd.merge(fact_accidents, dim_clima[['dim_clima_id']], how='left', left_index=True, right_index=True)
+    # For dim_weather
+    fact_accidents = pd.merge(fact_accidents, dim_weather[['dim_weather_id']], how='left', left_index=True, right_index=True)
 
-    # Para dim_vehiculo
-    fact_accidents = pd.merge(fact_accidents, dim_vehiculo[['dim_vehiculo_id']], how='left', left_index=True, right_index=True)
+    # For dim_vehicle
+    fact_accidents = pd.merge(fact_accidents, dim_vehicle[['dim_vehicle_id']], how='left', left_index=True, right_index=True)
 
-    # Para dim_ubicacion
-    fact_accidents = pd.merge(fact_accidents, dim_ubicacion[['dim_ubicacion_id']], how='left', left_index=True, right_index=True)
+    # For dim_location
+    fact_accidents = pd.merge(fact_accidents, dim_location[['dim_location_id']], how='left', left_index=True, right_index=True)
 
-    # Rellenar los valores nulos con np.nan
-    fact_accidents[['dim_tiempo_id', 'dim_clima_id', 'dim_vehiculo_id', 'dim_ubicacion_id']] = fact_accidents[['dim_tiempo_id', 'dim_clima_id', 'dim_vehiculo_id', 'dim_ubicacion_id']].fillna(np.nan)
+    # Fill null values with np.nan
+    fact_accidents[['dim_time_id', 'dim_weather_id', 'dim_vehicle_id', 'dim_location_id']] = fact_accidents[['dim_time_id', 'dim_weather_id', 'dim_vehicle_id', 'dim_location_id']].fillna(np.nan)
 
-    # Convertir los IDs a enteros, asegurando que los valores nulos permanezcan como np.nan
-    fact_accidents[['dim_tiempo_id', 'dim_clima_id', 'dim_vehiculo_id', 'dim_ubicacion_id']] = fact_accidents[['dim_tiempo_id', 'dim_clima_id', 'dim_vehiculo_id', 'dim_ubicacion_id']].astype('Int64')
+    # Convert IDs to integers, ensuring that null values remain as np.nan
+    fact_accidents[['dim_time_id', 'dim_weather_id', 'dim_vehicle_id', 'dim_location_id']] = fact_accidents[['dim_time_id', 'dim_weather_id', 'dim_vehicle_id', 'dim_location_id']].astype('Int64')
 
-    # Filtrar filas donde dim_vehiculo_id es np.nan antes de la inserción
-    fact_accidents = fact_accidents[fact_accidents['dim_vehiculo_id'].notna()]
+    # Filter rows where dim_vehicle_id is np.nan before insertion
+    fact_accidents = fact_accidents[fact_accidents['dim_vehicle_id'].notna()]
 
-    # Verificar si existen IDs en la tabla dim_clima
-    valid_clima_ids = dim_clima['dim_clima_id'].unique()
-    fact_accidents = fact_accidents[fact_accidents['dim_clima_id'].isin(valid_clima_ids)]
+    # Check for valid IDs in the dim_weather table
+    valid_weather_ids = dim_weather['dim_weather_id'].unique()
+    fact_accidents = fact_accidents[fact_accidents['dim_weather_id'].isin(valid_weather_ids)]
 
-    # También filtra por los demás IDs, asegurando que no sean np.nan
-    valid_tiempo_ids = dim_tiempo['dim_tiempo_id'].unique()
-    fact_accidents = fact_accidents[fact_accidents['dim_tiempo_id'].isin(valid_tiempo_ids)]
+    # Also filter by other valid IDs to ensure they are not np.nan
+    valid_time_ids = dim_time['dim_time_id'].unique()
+    fact_accidents = fact_accidents[fact_accidents['dim_time_id'].isin(valid_time_ids)]
 
-    valid_ubicacion_ids = dim_ubicacion['dim_ubicacion_id'].unique()
-    fact_accidents = fact_accidents[fact_accidents['dim_ubicacion_id'].isin(valid_ubicacion_ids)]
+    valid_location_ids = dim_location['dim_location_id'].unique()
+    fact_accidents = fact_accidents[fact_accidents['dim_location_id'].isin(valid_location_ids)]
 
-    # Insertar datos en la tabla fact_accidents
+    # Insert data into the fact_accidents table
     fact_accidents.to_sql('fact_accidents', engine, if_exists='append', index=False)
-    print("Datos insertados exitosamente en las tablas.")
+    print("Data successfully inserted into the tables.")
