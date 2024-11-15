@@ -16,13 +16,13 @@ from data_cleaning import clean_data
 from merge_data import merge_data
 from load_dimensional_model import dimensional_model
 from kafka_producer import kafka_producer
-from kafka_consumer import kafka_consumer_to_google_sheets
+
 
 # Definir el DAG
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2024, 12, 1),
+    'start_date': datetime(2024, 11, 13),
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
@@ -80,12 +80,7 @@ with DAG(
         dag=dag,
     )
 
-    kafka_consumer_task = PythonOperator(
-        task_id='kafka_consumer_to_google_sheets',
-        python_callable=kafka_consumer_to_google_sheets,
-        dag=dag,
-    )
 
     # Definir la secuencia de tareas
     get_data_task >> clean_api_data_task >> merge_data_task
-    extract_csv_task >> clean_data_task >> merge_data_task >> load_dimensional_model_task >> kafka_producer_task >> kafka_consumer_task
+    extract_csv_task >> clean_data_task >> merge_data_task >> load_dimensional_model_task >> kafka_producer_task 

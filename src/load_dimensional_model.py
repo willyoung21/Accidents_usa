@@ -22,7 +22,8 @@ def dimensional_model():
     engine = create_engine(DATABASE_URL)
 
     # Cargar el archivo CSV de accidentes
-    merged_df = pd.read_csv('data/merged_data_cleaned.csv')
+    merged_df = pd.read_csv('data/merged_data_cleaned.csv', encoding='utf-8')
+
 
     # Convertir crash_date y crash_time a datetime
     merged_df['crash_datetime'] = pd.to_datetime(merged_df['crash_date'] + ' ' + merged_df['crash_time'], errors='coerce')

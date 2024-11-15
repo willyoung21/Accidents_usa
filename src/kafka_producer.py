@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import os
 import json
 import time  # Importa el módulo time para usar sleep
-from kafka import KafkaProducer  # Importación del KafkaProducer
+from kafka import KafkaProducer  
 
 def kafka_producer():
     # Cargar las variables de entorno del archivo .env
