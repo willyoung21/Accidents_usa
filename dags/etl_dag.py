@@ -9,13 +9,13 @@ from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 
 # Import functions from the modules in src
-from src.API_connection import get_data_from_api
-from src.API_cleaning import clean_api_data
-from src.extract import extract_data
-from src.data_cleaning import clean_data
-from src.merge_data import merge_data
-from src.load_dimensional_model import dimensional_model
-from src.kafka_producer import kafka_producer
+from API_connection import get_data_from_api
+from API_cleaning import clean_api_data
+from extract import extract_data
+from data_cleaning import clean_data
+from merge_data import merge_data
+from load_dimensional_model import dimensional_model
+from kafka_producer import kafka_producer
 
 
 # Define the DAG

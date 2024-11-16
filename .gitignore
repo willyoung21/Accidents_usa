@@ -20,6 +20,9 @@ src/Credentials.py
 src/client_secret.json
 credentials.json
 accidents_usa.json
+accidentes.json/
 puglins/
 venv/
 ETL_Proyecto1
+logs/
+puglins/
