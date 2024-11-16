@@ -21,6 +21,7 @@ src/client_secret.json
 credentials.json
 accidents_usa.json
 accidentes.json/
+accidentes.json:1
 puglins/
 venv/
 ETL_Proyecto1
